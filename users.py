@@ -34,7 +34,6 @@ def save_users_to_file():
             json.dump(users, file, indent=2)
     except:
         return False
-    print(str(users))
     return True
 
 
@@ -44,7 +43,6 @@ def load_users_from_file():
         users = json.load(open(s.get_user_backup_file()))
     except:
         return False
-    print(str(users))
     return True
 
 
