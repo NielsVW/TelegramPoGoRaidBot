@@ -30,11 +30,51 @@ def save_user(user_id, username):
     u.save_users_to_file()
 
 
+def set_user_level(bot, update, args):
+    if len(args) != 1:
+        bot.send_message(chat_id=update.message.chat_id, text="Geef een level op aub, bv: /set_level 20")
+        return
+    level = int(args[0])
+    if not (0 < level <= 40):
+        bot.send_message(chat_id=update.message.chat_id, text="Geef een level tussen 1 en 40 op aub.")
+        return
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    try:
+        u.add_user_and_save_on_changes(user_id, username)
+        u.set_user_level(user_id, level)
+    except:
+        bot.send_message(chat_id=update.message.chat_id, text="Er ging iets mis!")
+        return
+    bot.send_message(chat_id=update.message.chat_id, text="Je level is opgeslagen!")
+
+
+def set_user_colour(bot, update, args):
+    if len(args) != 1:
+        bot.send_message(chat_id=update.message.chat_id, text="Geef een team of kleur op, bv: /set_team Instinct")
+        return
+    colour = args[0]
+    colour = s.verify_colour_input(colour)
+    if colour is None:
+        bot.send_message(chat_id=update.message.chat_id, text="Dat team herken ik niet, gebruik de naam van het team of de kleur.")
+        return
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    try:
+        u.add_user_and_save_on_changes(user_id, username)
+        u.set_user_colour(user_id, colour)
+    except:
+        bot.send_message(chat_id=update.message.chat_id, text="Er ging iets mis!")
+        return
+    bot.send_message(chat_id=update.message.chat_id, text="Je bent toegevoegd aan team %s!" % colour)
+
+
 def make_admin(bot, update, args):
     if len(args) == 0:
         bot.send_message(chat_id=update.message.chat_id, text="Geef een naam op aub, bv: /makeAdmin SatoshiTajiri")
         return
     username = args[0]
+    print(s.get_admins())
     user_id = u.get_user_id(username)
     if user_id is not None:
         if u.make_admin(user_id):
@@ -50,6 +90,7 @@ def remove_admin(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="Geef een naam op aub, bv: /makeAdmin SatoshiTajiri")
         return
     username = args[0]
+    print(s.get_admins())
     user_id = u.get_user_id(username)
     if user_id is not None:
         if u.remove_admin(user_id):
@@ -66,11 +107,6 @@ def button(bot, update):
     username = update.callback_query.from_user.username
     save_user(user_id, username)
     raid_button(bot, update)
-    # query = format(update.callback_query.data)
-    # if query.startswith("accept") or query.startswith("deny"):
-    #     admin_button(bot, update)
-    # else:
-    #     raid_button(bot, update)
 
 
 def admin_button(bot, update):
@@ -197,6 +233,10 @@ def add_handlers(dispatcher):
     dispatcher.add_handler(chat_id_handler)
     user_id_handler = CommandHandler('userid', get_user_id)
     dispatcher.add_handler(user_id_handler)
+    set_level_handler = CommandHandler('set_level', set_user_level, pass_args=True)
+    dispatcher.add_handler(set_level_handler)
+    set_colour_handler = CommandHandler('set_colour', set_user_colour, pass_args=True)
+    dispatcher.add_handler(set_colour_handler)
     make_admin_handler = CommandHandler('makeAdmin', make_admin, pass_args=True, filters=Filters.user(s.get_admins()))
     dispatcher.add_handler(make_admin_handler)
     remove_admin_handler = CommandHandler('removeAdmin', remove_admin, pass_args=True, filters=Filters.user(s.get_admins()))

@@ -23,6 +23,17 @@ group_chat_id = config["TelegramSettings"]["group_chat_id"]
 TIMESLOT1_ICON = "1️⃣"
 TIMESLOT2_ICON = "2️⃣"
 
+# teams
+INSTINCT = "Instinct"
+MYSTIC = "Mystic"
+VALOR = "Valor"
+INSTINCT_ICON = ""
+MYSTIC_ICON = ""
+VALOR_ICON = ""
+INSTINCT_ACCEPTED = [INSTINCT, "Geel", "Yellow"]
+MYSTIC_ACCEPTED = [MYSTIC, "Blauw", "Blue"]
+VALOR_ACCEPTED = [VALOR, "Rood", "Red"]
+
 # times
 START_TIME = datetime.time(hour=8)
 END_TIME = datetime.time(hour=21)
@@ -142,6 +153,18 @@ def get_webhook_parameters():
         result["webhook_url"] = None
     print(str(result))
     return result
+
+
+def verify_colour_input(colour):
+    colour = colour.capitalize()
+    if colour in INSTINCT_ACCEPTED:
+        return INSTINCT
+    elif colour in MYSTIC_ACCEPTED:
+        return MYSTIC
+    elif colour in VALOR_ACCEPTED:
+        return VALOR
+    else:
+        return None
 
 
 def timing(f):

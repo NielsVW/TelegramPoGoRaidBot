@@ -1,5 +1,6 @@
 import static_data as s
 import datetime as dt
+import users as u
 import json
 import collections
 
@@ -67,7 +68,6 @@ def add_player_to_raid(username, raid_id, timeslot):
     raids[raid_id]["players"][username] = {
         "persons": 0,
         "coming": True,
-        "colour": None,
         "arrived": False,
         "timeslot": timeslot
     }
@@ -251,6 +251,14 @@ def check_raids():
     return result
 
 
+def get_player_level(player):
+    result = ""
+    user_id = u.get_user_id(player)
+    if user_id is not None:
+        result = "(lvl%d) " % u.get_user_level(user_id)
+    return result
+
+
 def get_raid_info_as_string(raid_id):
     return get_boss_line(raid_id) + get_gym_line(raid_id) + get_time_line(raid_id)
 
@@ -304,10 +312,10 @@ def get_players_as_string(raid_id):
         coming = raids[raid_id]["players"][player]['coming']
         slot = raids[raid_id]["players"][player]["timeslot"]
         if coming:
-            line = "   %s %s" % ("└", player)
+            line = "   %s %s%s" % ("└", get_player_level(player), player)
             players_coming[slot] += 1
         else:
-            line = "   ❌ " + player
+            line = "   ❌ %s%s" % (player, get_player_level(player))
         persons = raids[raid_id]["players"][player]['persons']
         if persons > 0:
             line = line + " +" + str(persons)
