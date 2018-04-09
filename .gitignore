@@ -2,7 +2,7 @@
 venv/*
 __pycache__/*
 *.jpg
-properties.ini
+/properties.ini
 build/*
 raids.json
 users.json
