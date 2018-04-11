@@ -40,9 +40,6 @@ END_TIME = datetime.time(hour=21)
 BUFFER_TIME = datetime.timedelta(hours=1, minutes=45)
 RAID_DURATION = datetime.timedelta(minutes=int(config["GameData"]["raid_duration"]))
 
-# LULZ??
-LULZ = False
-
 
 def reload_config():
     global config
@@ -102,6 +99,26 @@ def make_current_bosses_dict():
 
 
 current_bosses = make_current_bosses_dict()
+
+
+def remove_raid_boss(bossname):
+    bosses = get_current_raid_bosses()
+    try:
+        bosses.remove(bossname)
+    except KeyError:
+        return False
+    dump_and_reload_config("GameData", "current_raid_bosses", ", ".join(map(str, bosses)))
+    return True
+
+
+def add_raid_boss(bossname):
+    bosses = get_current_raid_bosses()
+    if bossname not in bosses:
+        bosses.append(bossname)
+        dump_and_reload_config("GameData", "current_raid_bosses", ", ".join(map(str, bosses)))
+        return True
+    else:
+        return False
 
 
 def get_raid_backup_file():

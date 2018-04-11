@@ -13,6 +13,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 BOSS, GYM, LOCATION, OPENS, SLOT = range(5)
+REMOVE_RAID_BOSS = range(1)
 
 
 def start(bot, update):
@@ -21,10 +22,10 @@ def start(bot, update):
     r.init_raid()
 
     update.message.reply_text(
-        'Hallo! Ik zal je helpen om een raid toe te voegen. '
+        'Hallo %s! Ik zal je helpen om een raid toe te voegen. '
         'Stuur /cancel op elk moment om te stoppen.\n\n'
-        'Welke raid gaat starten?',
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+        'Welke raid gaat starten?' % user,
+        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True, selective=True))
 
     return BOSS
 
@@ -32,6 +33,8 @@ def start(bot, update):
 def boss(bot, update):
     user = update.message.from_user
     bossname = update.message.text
+    if bossname not in s.pokemon.values():
+        return BOSS
     r.set_boss_by_name(r.global_raid_id, bossname)
     logger.info("Boss selected by %s: %s", user.username, bossname)
     update.message.reply_text('Wat is de naam van de gym?',
@@ -119,12 +122,11 @@ def error(bot, update, error):
 
 
 def get_add_raid_handler():
-    # Add conversation handler with the states BOSS, GYM, LOCATION and OPENS
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler(command='addRaid', callback=start, filters=Filters.user(s.get_admins()))],
 
         states={
-            BOSS: [RegexHandler('^(' + "|".join(s.get_current_raid_bosses()) + ')$', boss)],
+            BOSS: [MessageHandler(Filters.text, boss)],
 
             GYM: [MessageHandler(Filters.text, gym)],
 
@@ -136,5 +138,39 @@ def get_add_raid_handler():
         },
 
         fallbacks=[CommandHandler('cancel', cancel)]
+    )
+    return conv_handler
+
+
+def remove_raid_boss_start(bot, update):
+    user = update.message.from_user
+    bossname = update.message.text
+    update.message.reply_text("Welke raid boss wil je verwijderen? Stoppen met /cancel", reply_markup=ReplyKeyboardMarkup(get_bosses_keyboard(), one_time_keyboard=True, selective=True))
+    return REMOVE_RAID_BOSS
+
+
+def remove_raid_boss(bot, update):
+    bossname = update.message.text
+    if s.remove_raid_boss(bossname):
+        update.message.reply_text("Ok, %s is geen raid boss meer" % bossname)
+    else:
+        update.message.reply_text("Er ging iets mis of %s is al een raid boss" % bossname)
+    return ConversationHandler.END
+
+
+def cancel_remove_boss(bot, update):
+    update.message.reply_text("Verwijderen van een raid boss is geannuleerd!", reply_markup=ReplyKeyboardRemove())
+    return ConversationHandler.END
+
+
+def get_remove_raid_boss_handler():
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler(command='removeRaidBoss', callback=remove_raid_boss_start, filters=Filters.user(s.get_admins()))],
+
+        states={
+            REMOVE_RAID_BOSS: [RegexHandler('^(' + "|".join(s.get_current_raid_bosses()) + ')$', remove_raid_boss)]
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel_remove_boss)]
     )
     return conv_handler

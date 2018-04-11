@@ -1,6 +1,6 @@
 from telegram.ext import MessageHandler, Filters, CommandHandler, Updater, CallbackQueryHandler
 from telegram import ParseMode, Location
-from conversation import get_add_raid_handler
+from conversation import get_add_raid_handler, get_remove_raid_boss_handler
 from keyboard import get_keyboard
 import raid as r
 import static_data as s
@@ -10,7 +10,6 @@ import logging, time, threading, random, sys
 import datetime as dt
 
 
-current_day = dt.datetime.now().date()
 if sys.version_info[0] < 3:
     print("version smaller than 3")
     sys.reload(sys)
@@ -207,12 +206,22 @@ def add_test_raid(bot, update):
     r.increment_global_raid_id()
 
 
+def add_raid_boss(bot, update, args):
+    if len(args) != 1:
+        bot.send_message(chat_id=update.message.chat_id, text="error")
+        return
+    bossname = str(args[0]).capitalize()
+    if bossname not in s.pokemon.values():
+        bot.send_message(chat_id=update.message.chat_id, text="poke no exist")
+        return
+    if s.add_raid_boss(bossname):
+        bot.send_message(chat_id=update.message.chat_id, text="success")
+    else:
+        bot.send_message(chat_id=update.message.chat_id, text="already in")
+
+
 def unknown(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Sorry, ik versta dat commando niet. Dit kan zijn doordat je geen admin bent.")
-
-
-def silence(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text="Ssshh %s, you are beautiful when you don't talk" % update.message.from_user.username)
 
 
 def load_state_from_file(bot, update):
@@ -241,6 +250,9 @@ def add_handlers(dispatcher):
     dispatcher.add_handler(make_admin_handler)
     remove_admin_handler = CommandHandler('removeAdmin', remove_admin, pass_args=True, filters=Filters.user(s.get_admins()))
     dispatcher.add_handler(remove_admin_handler)
+    dispatcher.add_handler(get_remove_raid_boss_handler())
+    add_raid_boss_handler = CommandHandler('addRaidBoss', add_raid_boss, pass_args=True, filters=Filters.user(s.get_admins()))
+    dispatcher.add_handler(add_raid_boss_handler)
 
     add_test_raid_handler = CommandHandler('testRaid', add_test_raid, filters=Filters.user(s.get_admins()))
     dispatcher.add_handler(add_test_raid_handler)
@@ -253,25 +265,6 @@ def add_handlers(dispatcher):
 
     unknown_handler = MessageHandler(Filters.command, unknown)
     dispatcher.add_handler(unknown_handler)
-    if s.LULZ:
-        lulz_handler = MessageHandler(Filters.text, silence)
-        dispatcher.add_handler(lulz_handler)
-
-
-def pull_api():
-    global current_day
-    print(time.ctime())
-    now = dt.datetime.now()
-    sleeptime = 60
-    if s.START_TIME <= now.time() < s.END_TIME:
-        print("api pull")
-        sleeptime = 60
-    elif now.time() >= s.END_TIME + s.BUFFER_TIME:
-        print("reset raids")
-        r.reset_raids()
-        sleeptime = (dt.timedelta(hours=24) - (now - now.replace(hour=6, minute=30, second=0, microsecond=0))).total_seconds() % (24 * 3600)
-    print("sleeptime is " + str(sleeptime))
-    threading.Timer(sleeptime, pull_api).start()
 
 
 def main():
